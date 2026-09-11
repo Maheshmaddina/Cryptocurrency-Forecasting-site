@@ -14,7 +14,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.decorators.csrf import csrf_exempt
 
+from .health import healthz
+
 urlpatterns = [
+    path('healthz/', healthz, name='healthz'),
     path('admin/', admin.site.urls),
     path('', include('home.urls')),
     path('auth/', include('authuser.urls')),

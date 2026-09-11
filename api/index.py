@@ -23,6 +23,9 @@ django.setup()
 try:
     call_command('migrate', interactive=False, verbosity=0)
 except Exception as exc:
-    print(f"[WARN] migrate on cold start failed: {exc}")
+    import traceback
+
+    print(f"[ERROR] migrate on cold start failed: {type(exc).__name__}: {exc}")
+    traceback.print_exc()
 
 app = get_wsgi_application()
