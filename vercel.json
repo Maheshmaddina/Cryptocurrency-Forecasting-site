@@ -1,0 +1,15 @@
+{
+  "regions": ["bom1"],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "includeFiles": "Django/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ],
+  "crons": [
+    { "path": "/predict/api/cron/update-actual-prices/", "schedule": "30 0 * * *" }
+  ]
+}

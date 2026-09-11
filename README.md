@@ -58,6 +58,28 @@ celery -A CryptoSight beat -l info
 
 Visit: http://127.0.0.1:8000/
 
+## ☁️ Deploying to Vercel
+
+Vercel can't run TensorFlow (too large), Celery or Redis, so the deployment
+uses the exported numpy models and runs each prediction inside the request:
+
+- `api/index.py` — WSGI entrypoint, `vercel.json` — routing, region and cron
+- `requirements.txt` (repo root) — light deps for Vercel; `Django/requirements.txt` — full local stack
+- Settings switch on the `VERCEL` environment variable (`USE_CELERY=False`, WhiteNoise static files)
+
+Vercel project setup:
+
+1. Root Directory: leave blank (the repo root).
+2. Storage → connect Neon Postgres; it sets `DATABASE_URL` automatically.
+   Without it, data is stored in a temporary SQLite file and is lost regularly.
+3. Environment variables: `DJANGO_SECRET_KEY`, optionally `CRON_SECRET` and `USD_TO_INR`.
+
+After retraining a model, re-export the numpy weights and redeploy:
+
+```bash
+python Model_Training/export_numpy_weights.py
+```
+
 ## 🏗️ Structure
 
 ```

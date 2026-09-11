@@ -13,5 +13,6 @@ urlpatterns = [
     path('api/predict/', views.prediction_api, name='prediction_api'),
     path('api/predict-async/', views.prediction_api_async, name='prediction_api_async'),
     path('api/task-status/', views.task_status_api, name='task_status_api'),
+    path('api/cron/update-actual-prices/', views.update_actual_prices_cron, name='update_actual_prices_cron'),
     path('history/', views.prediction_history, name='history'),
 ]

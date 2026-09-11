@@ -17,7 +17,7 @@ import os
 import sys
 from django.conf import settings
 from .models import PredictionHistory
-from celery.result import AsyncResult
+from . import services
 
 from .prediction import get_live_data, get_live_prediction, get_realtime_price
 
@@ -33,14 +33,14 @@ def selector_view(request):
     
     # Scan hourly models directory
     if os.path.exists(hourly_models_dir):
-        hourly_files = glob.glob(os.path.join(hourly_models_dir, '*_hourly_lstm.keras'))
+        hourly_files = glob.glob(os.path.join(hourly_models_dir, '*_hourly_lstm.npz'))
         for file in hourly_files:
             crypto = os.path.basename(file).split('_')[0]
             available_cryptos.add(crypto)
     
     # Scan daily models directory
     if os.path.exists(daily_models_dir):
-        daily_files = glob.glob(os.path.join(daily_models_dir, '*_daily_lstm.keras'))
+        daily_files = glob.glob(os.path.join(daily_models_dir, '*_daily_lstm.npz'))
         for file in daily_files:
             crypto = os.path.basename(file).split('_')[0]
             available_cryptos.add(crypto)
@@ -157,22 +157,32 @@ def prediction_api(request):
 @require_http_methods(["GET"])
 def prediction_api_async(request):
     """
-    Async API endpoint that submits prediction task to Celery and returns task_id
-    This allows the frontend to poll for results without blocking
+    Submits the prediction to Celery and returns a task_id for the frontend to
+    poll, so the request isn't blocked. Where no Celery worker runs (Vercel),
+    the prediction runs here and the finished result is returned instead.
     """
-    from .tasks import generate_prediction_task
-    
     crypto = request.GET.get('crypto', 'BTC')
     timeframe = request.GET.get('timeframe', 'hourly')
     period = int(request.GET.get('period', '1'))
-    
+
+    # Get user_id (0 for anonymous users)
+    user_id = request.user.id if request.user.is_authenticated else 0
+
+    if not settings.USE_CELERY:
+        print(f"\nPrediction Request: {crypto} | {timeframe} | {period}")
+        result = services.generate_prediction(user_id, crypto, timeframe, period)
+
+        if result.get('status') == 'error':
+            return JsonResponse({'status': 'FAILURE', 'error': result['message']}, status=500)
+
+        return JsonResponse({'status': 'SUCCESS', 'result': result})
+
+    from .tasks import generate_prediction_task
+
     try:
         print(f"\nAsync Prediction Request: {crypto} | {timeframe} | {period}")
         print(f"Submitting task to Celery worker...")
-        
-        # Get user_id (0 for anonymous users)
-        user_id = request.user.id if request.user.is_authenticated else 0
-        
+
         # Submit task to Celery
         task = generate_prediction_task.delay(user_id, crypto, timeframe, period)
         
@@ -205,6 +215,8 @@ def task_status_api(request):
         return JsonResponse({'error': 'task_id parameter is required'}, status=400)
     
     try:
+        from celery.result import AsyncResult
+
         # Get task result from Celery
         task_result = AsyncResult(task_id)
         
@@ -244,7 +256,17 @@ def prediction_history(request):
     
     # Query all predictions for current user
     all_predictions = PredictionHistory.objects.filter(user=request.user)
-    
+
+    # Without a Celery worker (Vercel), fill in a few due actual prices here;
+    # the rest are handled by the cron job
+    if not settings.USE_CELERY:
+        try:
+            due_ids = services.find_due_prediction_ids(all_predictions)[:10]
+            if due_ids:
+                services.update_actual_prices(due_ids)
+        except Exception as e:
+            print(f"Could not update actual prices: {e}")
+
     # Apply cryptocurrency and timeframe filters if provided
     if crypto_filter:
         all_predictions = all_predictions.filter(crypto=crypto_filter)
@@ -307,6 +329,22 @@ def get_actual_price_api(request, prediction_id):
             
     except PredictionHistory.DoesNotExist:
         return JsonResponse({'status': 'ERROR', 'message': 'Prediction not found.'}, status=404)
+
+@require_http_methods(["GET"])
+def update_actual_prices_cron(request):
+    """
+    Endpoint for Vercel's cron job: fills in actual prices for predictions whose
+    target time has passed. Locally, Celery Beat does this instead.
+    """
+    cron_secret = os.environ.get('CRON_SECRET')
+    if cron_secret and request.headers.get('Authorization') != f'Bearer {cron_secret}':
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+    prediction_ids = services.find_due_prediction_ids()
+    if not prediction_ids:
+        return JsonResponse({'updated': 0, 'total': 0})
+
+    return JsonResponse(services.update_actual_prices(prediction_ids))
 
 def get_prediction(crypto, timeframe, period):
     """Generate price prediction using trained LSTM model from Model_Training"""

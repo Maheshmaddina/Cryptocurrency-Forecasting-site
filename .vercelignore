@@ -1,0 +1,13 @@
+# Not needed by the deployed site - keeps the function bundle small
+venv/
+Data/
+screenshots/
+Model_Training/
+Django/predict/models_hourly/*.keras
+Django/predict/models_hourly/*.pkl
+Django/predict/models_daily/*.keras
+Django/predict/models_daily/*.pkl
+Django/requirements*.txt
+Django/db.sqlite3
+Django/celerybeat-schedule*
+**/__pycache__/

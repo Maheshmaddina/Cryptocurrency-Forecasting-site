@@ -22,13 +22,31 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
+# True when running on Vercel, which has no Celery worker, no Redis and a
+# filesystem that only /tmp is writable in
+ON_VERCEL = bool(os.environ.get('VERCEL'))
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-##z_mgo3z8r8%!*8*q8lufxs_ktma-d162-dow2b%fko51o5_0'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-##z_mgo3z8r8%!*8*q8lufxs_ktma-d162-dow2b%fko51o5_0'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False' if ON_VERCEL else 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '.vercel.app']
+ALLOWED_HOSTS += [host for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if host]
+
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+CSRF_TRUSTED_ORIGINS += [origin for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin]
+
+if ON_VERCEL:
+    # Vercel terminates TLS in front of the app
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Predictions run in a Celery worker locally, and inside the request on Vercel
+USE_CELERY = os.environ.get('USE_CELERY', 'False' if ON_VERCEL else 'True').lower() == 'true'
 
 
 # Application definition
@@ -40,15 +58,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_celery_beat',
     'home',
     'authuser',
     'predict',
     'chatbot',
 ]
 
+if USE_CELERY:
+    INSTALLED_APPS.insert(6, 'django_celery_beat')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,12 +102,24 @@ WSGI_APPLICATION = 'CryptoSight.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Postgres when DATABASE_URL is set (Vercel + Neon), SQLite otherwise.
+# A Vercel deployment without DATABASE_URL falls back to SQLite in /tmp, which
+# is wiped regularly - accounts and history won't survive there.
+DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+
+if DATABASE_URL:
+    import dj_database_url
+
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=0, ssl_require=True)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/tmp/db.sqlite3' if ON_VERCEL else BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -127,6 +160,11 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+# WhiteNoise serves static files straight from the app's static directories,
+# so the deployment needs no collectstatic step
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = DEBUG
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
