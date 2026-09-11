@@ -9,6 +9,8 @@ from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.http import JsonResponse
 
+from .startup import migration_state
+
 
 def healthz(request):
     status = {
@@ -31,6 +33,7 @@ def healthz(request):
         plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
         status['unapplied_migrations'] = len(plan)
         status['user_table_exists'] = 'auth_user' in connection.introspection.table_names()
+        status['migrations'] = migration_state()
     except Exception as exc:
         status['migration_error'] = f"{type(exc).__name__}: {exc}"
         return JsonResponse(status, status=500)

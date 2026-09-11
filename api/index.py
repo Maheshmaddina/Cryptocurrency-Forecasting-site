@@ -13,19 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'Django'))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'CryptoSight.settings')
 
 import django  # noqa: E402
-from django.core.management import call_command  # noqa: E402
 from django.core.wsgi import get_wsgi_application  # noqa: E402
 
-django.setup()
-
-# Serverless instances start fresh, so make sure the schema exists
-# (a no-op once the database is up to date)
-try:
-    call_command('migrate', interactive=False, verbosity=0)
-except Exception as exc:
-    import traceback
-
-    print(f"[ERROR] migrate on cold start failed: {type(exc).__name__}: {exc}")
-    traceback.print_exc()
-
+# Migrations are applied on the first request by
+# CryptoSight.startup.EnsureMigrationsMiddleware
 app = get_wsgi_application()

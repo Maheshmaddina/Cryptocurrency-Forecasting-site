@@ -48,6 +48,9 @@ if ON_VERCEL:
 # Predictions run in a Celery worker locally, and inside the request on Vercel
 USE_CELERY = os.environ.get('USE_CELERY', 'False' if ON_VERCEL else 'True').lower() == 'true'
 
+# Vercel has no release step, so migrations are applied on the first request
+AUTO_MIGRATE = os.environ.get('AUTO_MIGRATE', 'True' if ON_VERCEL else 'False').lower() == 'true'
+
 
 # Application definition
 
@@ -68,6 +71,7 @@ if USE_CELERY:
     INSTALLED_APPS.insert(6, 'django_celery_beat')
 
 MIDDLEWARE = [
+    'CryptoSight.startup.EnsureMigrationsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
