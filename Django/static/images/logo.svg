@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#0a1929" stroke="#00d4ff" stroke-width="2"/>
+  
+  <!-- Chart bars -->
+  <rect x="20" y="60" width="8" height="15" fill="#00d4ff" rx="2"/>
+  <rect x="32" y="50" width="8" height="25" fill="#00d4ff" rx="2"/>
+  <rect x="44" y="40" width="8" height="35" fill="#00d4ff" rx="2"/>
+  <rect x="56" y="30" width="8" height="45" fill="#00d4ff" rx="2"/>
+  <rect x="68" y="25" width="8" height="50" fill="#00d4ff" rx="2"/>
+  
+  <!-- Trend arrow -->
+  <path d="M 25 55 L 45 35 L 65 25 L 75 20" stroke="#00ffaa" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <polygon points="75,20 70,18 72,25" fill="#00ffaa"/>
+  
+  <!-- Bitcoin symbol -->
+  <circle cx="75" cy="25" r="10" fill="#00d4ff" opacity="0.3"/>
+  <text x="75" y="30" font-family="Arial" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">₿</text>
+  
+  <!-- Dollar symbol -->
+  <circle cx="30" cy="35" r="8" fill="#00d4ff" opacity="0.3"/>
+  <text x="30" y="39" font-family="Arial" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">$</text>
+</svg>

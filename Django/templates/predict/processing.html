@@ -1,0 +1,503 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Processing Prediction - CryptoSight{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        min-height: 100vh;
+        overflow: hidden;
+    }
+    
+    .processing-container {
+        max-width: 900px;
+        margin: 2rem auto 40px;
+        padding: 2rem;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .back-button {
+        margin-bottom: 30px;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .back-link:hover {
+        background-color: var(--glass-bg);
+        color: var(--text-primary);
+    }
+    
+    .back-icon {
+        margin-right: 10px;
+        font-size: 1.1rem;
+    }
+    
+    .crypto-header {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+        border: 1px solid var(--glass-border);
+    }
+    
+    .crypto-header-icon {
+        width: 60px;
+        height: 60px;
+        margin-right: 20px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--glass-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--neon-cyan);
+    }
+    
+    .crypto-header-icon img {
+        max-width: 80%;
+        max-height: 80%;
+    }
+    
+    .crypto-header-info {
+        flex: 1;
+    }
+    
+    .crypto-header-name {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary);
+    }
+    
+    .crypto-header-symbol {
+        color: var(--text-secondary);
+        margin: 0;
+        font-size: 1rem;
+    }
+    
+    .timeframe-badge {
+        text-align: right;
+        background: var(--neon-cyan);
+        border-radius: 24px;
+        padding: 10px 20px;
+        color: #0f2027;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(69, 255, 213, 0.3);
+    }
+    
+    .timeframe-icon {
+        margin-right: 5px;
+    }
+    
+    .circular-progress-container {
+        position: relative;
+        width: 320px;
+        height: 320px;
+        margin: 0 auto 3rem;
+    }
+    
+    .circular-progress {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .progress-ring-circle-bg {
+        stroke: var(--glass-border);
+        stroke-opacity: 1;
+    }
+    
+    .progress-ring-circle {
+        transform-origin: center;
+        transform: rotate(-90deg);
+        transition: stroke-dashoffset 0.5s ease;
+        stroke: url(#gradient);
+        filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
+    }
+    
+    .progress-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 220px;
+        height: 220px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border: 1px solid var(--glass-border);
+    }
+    
+    .ai-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .ai-icon img {
+        max-width: 100%;
+        max-height: 100%;
+    }
+    
+    .progress-label {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--neon-cyan);
+        text-shadow: 0 0 10px rgba(69, 255, 213, 0.5);
+    }
+    
+    .processing-progress {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .processing-text {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    
+    .processing-subtext {
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-bar {
+        height: 8px;
+        background: var(--glass-border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: var(--neon-cyan);
+        transition: width 0.5s ease;
+        box-shadow: 0 0 10px rgba(69, 255, 213, 0.5);
+    }
+    
+    .progress-percentage {
+        text-align: right;
+        font-size: 1rem;
+        color: var(--neon-cyan);
+        font-weight: 700;
+    }
+    
+    .processing-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+    }
+    
+    .step {
+        flex: 1;
+        text-align: center;
+        padding: 15px;
+        background: var(--glass-bg);
+        border-radius: 8px;
+        margin: 0 10px;
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s ease;
+        opacity: 0.5;
+    }
+    
+    .step.active {
+        opacity: 1;
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    }
+    
+    .step.completed {
+        opacity: 1;
+        border-color: #2ea043;
+    }
+    
+    .step-icon {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto 10px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+    
+    .step-market .step-icon {
+        background-color: #f0883e;
+    }
+    
+    .step-models .step-icon {
+        background-color: #a371f7;
+    }
+    
+    .step-predictions .step-icon {
+        background-color: #2ea043;
+    }
+    
+    .step-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--text-primary);
+    }
+    
+    .step-description {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .processing-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+        padding-top: 15px;
+        border-top: 1px solid var(--glass-border);
+        color: var(--text-secondary);
+        font-size: 12px;
+    }
+    
+    @media (max-width: 768px) {
+        .processing-steps {
+            flex-direction: column;
+        }
+        
+        .step {
+            margin: 10px 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="processing-container">
+    <div class="back-button">
+        <a href="{% url 'predict:selector' %}" class="back-link">
+            <span class="back-icon">←</span> Back to Selection
+        </a>
+    </div>
+    
+    <div class="crypto-header">
+        <div class="crypto-header-icon">
+            <img id="processing-crypto-img" src="{% static 'images/btc.svg' %}" alt="Bitcoin">
+        </div>
+        <div class="crypto-header-info">
+            <h2 class="crypto-header-name" id="crypto-name">Bitcoin</h2>
+            <p class="crypto-header-symbol" id="crypto-symbol">BTC</p>
+        </div>
+        <div class="timeframe-badge prediction-timeframe">
+            <span class="timeframe-icon">⏱️</span>
+            <span id="processing-timeframe">24 Hours</span>
+        </div>
+    </div>
+    
+    
+    <div class="processing-progress">
+        <p class="processing-text" id="status-message">Initializing AI Models...</p>
+        <p class="processing-subtext" id="status-details">Loading neural network parameters</p>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 15%;"></div>
+        </div>
+        <p class="progress-percentage" id="progress-percentage">15%</p>
+    </div>
+    
+    <div class="processing-steps">
+        <div class="step step-market">
+            <div class="step-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="step-title">Market Data</h3>
+            <p class="step-description">Analyzing trends</p>
+        </div>
+        <div class="step step-models">
+            <div class="step-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h3 class="step-title">AI Models</h3>
+            <p class="step-description">Processing algorithms</p>
+        </div>
+        <div class="step step-predictions">
+            <div class="step-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h3 class="step-title">Predictions</h3>
+            <p class="step-description">Calculating results</p>
+        </div>
+    </div>
+    
+    <div class="processing-footer">
+        <span>Processing Time: <span id="processing-time">00:02</span></span>
+        <span>Neural Networks: <span class="active-text">Active</span></span>
+        <span>Data Points: 1,247,892</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const crypto = (urlParams.get('crypto') || 'BTC').toUpperCase();
+        const timeframe = urlParams.get('timeframe') || 'hourly'; // 'hourly' or 'daily'
+        const period = urlParams.get('period') || '24';
+        
+        // Update UI with selected parameters
+        document.getElementById('crypto-name').textContent = getCryptoName(crypto);
+        document.getElementById('crypto-symbol').textContent = crypto;
+        
+        // Handle image loading with fallback
+        const imgElement = document.getElementById('processing-crypto-img');
+        imgElement.src = `/static/images/${crypto.toLowerCase()}.svg`;
+        imgElement.onerror = function() {
+            console.warn(`Image not found for ${crypto}, using placeholder`);
+            this.style.display = 'none';
+        };
+        
+        const unit = timeframe === 'hourly' ? 'Hour' : 'Day';
+        document.getElementById('processing-timeframe').textContent = `${period} ${unit}${parseInt(period,10) > 1 ? 's' : ''}`;
+        
+        // Simulate progress
+        let progress = 15;
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const statusMessage = document.getElementById('status-message');
+        const statusDetails = document.getElementById('status-details');
+        const processingTime = document.getElementById('processing-time');
+        
+        // Status messages for different stages
+        const statusMessages = [
+            { message: "Initializing AI Models...", details: "Loading neural network parameters", percentage: 15 },
+            { message: "Fetching Market Data...", details: "Retrieving historical price information", percentage: 30 },
+            { message: "Processing Data Patterns...", details: "Analyzing market trends and indicators", percentage: 45 },
+            { message: "Training Prediction Models...", details: "Optimizing neural networks for accuracy", percentage: 60 },
+            { message: "Generating Price Forecasts...", details: "Calculating future price movements", percentage: 75 },
+            { message: "Finalizing Predictions...", details: "Validating results and confidence metrics", percentage: 90 },
+            { message: "Prediction Complete!", details: "Redirecting to results page", percentage: 100 }
+        ];
+        
+        // Timer for processing time
+        let seconds = 2;
+        const timerInterval = setInterval(function() {
+            seconds++;
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            processingTime.textContent = `${mins}:${secs}`;
+        }, 1000);
+        
+        // Progress simulation
+        let currentStage = 0;
+        const progressInterval = setInterval(function() {
+            if (currentStage < statusMessages.length) {
+                const stage = statusMessages[currentStage];
+                progress = stage.percentage;
+                progressFill.style.width = `${progress}%`;
+                progressPercentage.textContent = `${progress}%`;
+                statusMessage.textContent = stage.message;
+                statusDetails.textContent = stage.details;
+                currentStage++;
+                
+                // Update step boxes based on progress
+                updateStepBoxes(progress);
+                
+                // If we've reached the final stage, redirect to results
+                if (currentStage === statusMessages.length) {
+                    setTimeout(function() {
+                        window.location.href = `/predict/results/?crypto=${crypto}&timeframe=${timeframe}&period=${period}`;
+                    }, 800);
+                }
+            }
+        }, 1500);
+        
+        // Clean up intervals when leaving the page
+        window.addEventListener('beforeunload', function() {
+            clearInterval(progressInterval);
+            clearInterval(timerInterval);
+        });
+        
+        // Update step boxes based on progress
+        function updateStepBoxes(progress) {
+            const marketStep = document.querySelector('.step-market');
+            const modelsStep = document.querySelector('.step-models');
+            const predictionsStep = document.querySelector('.step-predictions');
+            
+            // Reset all
+            [marketStep, modelsStep, predictionsStep].forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+            
+            if (progress <= 30) {
+                marketStep.classList.add('active');
+                marketStep.querySelector('.step-description').textContent = 'Fetching data...';
+            } else if (progress <= 60) {
+                marketStep.classList.add('completed');
+                modelsStep.classList.add('active');
+                marketStep.querySelector('.step-description').textContent = 'Data loaded ✓';
+                modelsStep.querySelector('.step-description').textContent = 'Training models...';
+            } else if (progress <= 90) {
+                marketStep.classList.add('completed');
+                modelsStep.classList.add('completed');
+                predictionsStep.classList.add('active');
+                marketStep.querySelector('.step-description').textContent = 'Data loaded ✓';
+                modelsStep.querySelector('.step-description').textContent = 'Models trained ✓';
+                predictionsStep.querySelector('.step-description').textContent = 'Generating predictions...';
+            } else {
+                marketStep.classList.add('completed');
+                modelsStep.classList.add('completed');
+                predictionsStep.classList.add('completed');
+                marketStep.querySelector('.step-description').textContent = 'Data loaded ✓';
+                modelsStep.querySelector('.step-description').textContent = 'Models trained ✓';
+                predictionsStep.querySelector('.step-description').textContent = 'Complete ✓';
+            }
+        }
+        
+        // Initial step update
+        updateStepBoxes(15);
+        
+        // Helper function to get crypto name from symbol
+        function getCryptoName(symbol) {
+            const cryptoNames = {
+                'BTC': 'Bitcoin',
+                'ETH': 'Ethereum',
+                'BNB': 'Binance Coin',
+                'SOL': 'Solana',
+                'XRP': 'Ripple',
+                'ADA': 'Cardano',
+                'DOGE': 'Dogecoin',
+                'DOT': 'Polkadot'
+            };
+            return cryptoNames[symbol] || symbol;
+        }
+    });
+</script>
+{% endblock %}

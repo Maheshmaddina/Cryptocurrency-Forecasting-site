@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=18">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="glass-card auth-card">
+        <h2 class="auth-title">Sign Up</h2>
+        
+        <form method="post" class="auth-form" id="signup-form">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="error-message" id="server-error" style="display: none;">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <p data-error="{{ field.label }}: {{ error }}">{{ field.label }}: {{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <p data-error="{{ error }}">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="id_username">Username</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" name="username" id="id_username" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_email">Email</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" name="email" id="id_email" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password1">Password</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password1" id="id_password1" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('id_password1', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password2">Confirm Password</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password2" id="id_password2" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('id_password2', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="neon-btn primary-btn">Sign Up</button>
+        </form>
+        
+        <div class="auth-links">
+            <p>Already have an account? <a href="{% url 'authuser:login' %}" class="neon-text">Login</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}"></script>
+<script>
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Show server errors as toast if present
+document.addEventListener('DOMContentLoaded', function() {
+    const serverError = document.getElementById('server-error');
+    if (serverError) {
+        const errorMessages = serverError.querySelectorAll('p');
+        errorMessages.forEach(function(errorMsg) {
+            const errorText = errorMsg.getAttribute('data-error');
+            if (errorText) {
+                showToast(errorText, 'error', 'Signup Failed');
+            }
+        });
+    }
+});
+
+// Form validation
+document.querySelector('.auth-form').addEventListener('submit', function(e) {
+    const username = document.getElementById('id_username').value.trim();
+    const email = document.getElementById('id_email').value.trim();
+    const password1 = document.getElementById('id_password1').value;
+    const password2 = document.getElementById('id_password2').value;
+    
+    if (!username) {
+        e.preventDefault();
+        showToast('Please enter a username', 'error');
+        document.getElementById('id_username').focus();
+        return false;
+    }
+    
+    if (username.length < 3) {
+        e.preventDefault();
+        showToast('Username must be at least 3 characters long', 'error');
+        document.getElementById('id_username').focus();
+        return false;
+    }
+    
+    if (!email) {
+        e.preventDefault();
+        showToast('Please enter your email', 'error');
+        document.getElementById('id_email').focus();
+        return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        showToast('Please enter a valid email address', 'error');
+        document.getElementById('id_email').focus();
+        return false;
+    }
+    
+    if (!password1) {
+        e.preventDefault();
+        showToast('Please enter a password', 'error');
+        document.getElementById('id_password1').focus();
+        return false;
+    }
+    
+    if (password1.length < 8) {
+        e.preventDefault();
+        showToast('Password must be at least 8 characters long', 'error');
+        document.getElementById('id_password1').focus();
+        return false;
+    }
+    
+    if (password1 !== password2) {
+        e.preventDefault();
+        showToast('Passwords do not match', 'error');
+        document.getElementById('id_password2').focus();
+        return false;
+    }
+    
+    // Only show loading state if validation passed
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+});
+</script>
+{% endblock %}

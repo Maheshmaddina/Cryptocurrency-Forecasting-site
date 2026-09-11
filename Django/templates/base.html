@@ -1,0 +1,155 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CryptoSight - AI-powered cryptocurrency price prediction platform. Get accurate Bitcoin, Ethereum, and altcoin price forecasts using advanced machine learning.">
+    <meta name="keywords" content="cryptocurrency, bitcoin, ethereum, price prediction, AI, machine learning, crypto forecast">
+    <meta name="author" content="CryptoSight">
+    
+    <title>{% block title %}CryptoSight - AI Crypto Price Prediction{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/logo.svg' %}">
+    
+    <!-- Google Fonts: Poppins and Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=28">
+    <!-- Utility Classes -->
+    <link rel="stylesheet" href="{% static 'css/utilities.css' %}?v=1">
+    <!-- Chatbot CSS -->
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <!-- Page specific CSS -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <!-- Left: Logo/Brand -->
+            <a href="{% url 'home' %}" class="navbar-brand">
+                <img src="{% static 'images/logo.svg' %}" alt="CryptoSight Logo" class="brand-logo">
+                <span class="brand-text">CryptoSight</span>
+            </a>
+            
+            <!-- Center: Navigation Links (Only when logged in) -->
+            {% if user.is_authenticated %}
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item"><a href="{% url 'home' %}" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="{% url 'predict:selector' %}" class="nav-link">Predict</a></li>
+                <li class="nav-item"><a href="{% url 'predict:history' %}" class="nav-link">History</a></li>
+            </ul>
+            {% else %}
+            <ul class="nav-menu" id="nav-menu"></ul>
+            {% endif %}
+            
+            <!-- Right: User Section & Theme Toggle -->
+            <div class="navbar-right">
+                {% if user.is_authenticated %}
+                    <!-- User Dropdown -->
+                    <div class="user-dropdown">
+                        <button class="user-menu-btn" id="user-dropdown-btn">
+                            <div class="user-avatar">
+                                <span>{{ user.username|slice:":1"|upper }}</span>
+                            </div>
+                        </button>
+                        <div class="dropdown-menu" id="user-dropdown-menu">
+                            <div class="dropdown-header-section">
+                                <div class="dropdown-avatar-large">
+                                    <span>{{ user.username|slice:":1"|upper }}</span>
+                                </div>
+                                <div class="dropdown-user-details">
+                                    <div class="dropdown-username-text">{{ user.username }}</div>
+                                    <div class="dropdown-email-text">
+                                        {% if user.email %}
+                                            {{ user.email }}
+                                        {% else %}
+                                            No email provided
+                                        {% endif %}
+                                    </div>
+                                    <div class="dropdown-member-since">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>Joined {{ user.date_joined|date:"M Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'authuser:edit_profile' %}" class="dropdown-item">
+                                <i class="fas fa-user-edit"></i>
+                                <span>Edit Profile</span>
+                            </a>
+                            <a href="{% url 'authuser:logout' %}" class="dropdown-item logout-item">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Log Out</span>
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'authuser:login' %}" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Login</span>
+                    </a>
+                {% endif %}
+                
+                <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+                
+                <!-- Mobile Menu Toggle (Only when logged in) -->
+                {% if user.is_authenticated %}
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-simple">
+            <div class="footer-brand">
+                <h3>CryptoSight</h3>
+                <p>AI-powered cryptocurrency price predictions</p>
+            </div>
+            <div class="footer-links">
+                <a href="{% url 'home' %}">Home</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'predict:selector' %}">Predict</a>
+                    <a href="{% url 'predict:history' %}">History</a>
+                {% else %}
+                    <a href="{% url 'authuser:login' %}">Login</a>
+                    <a href="{% url 'authuser:signup' %}">Sign Up</a>
+                {% endif %}
+            </div>
+            <div class="footer-social">
+                <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+                <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 CryptoSight. Built with Django & TensorFlow</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <!-- Include Chatbot -->
+    {% include 'chatbot/chatbot.html' %}
+    
+    <script src="{% static 'js/base.js' %}?v=16"></script>
+    <script src="{% static 'js/chatbot.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

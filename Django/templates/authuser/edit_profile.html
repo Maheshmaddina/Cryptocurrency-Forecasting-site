@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=14">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="glass-card max-w-md">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+            <a href="{% url 'home' %}" class="neon-btn secondary-btn" style="font-size: 1.2rem; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: center; min-height: 48px;" title="Back to Home">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2 style="font-size: 2.5rem; margin: 0; color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0, 212, 255, 0.4); line-height: 1; flex: 1;">Edit Profile</h2>
+        </div>
+        
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            {% if message.tags == 'success' or message.level_tag == 'success' %}
+            <div class="alert alert-success p-2 rounded-lg mb-1">
+                <i class="fas fa-check-circle"></i>
+                {{ message }}
+            </div>
+            {% elif 'Profile' in message.message or 'Username' in message.message or 'Email' in message.message %}
+            <div class="alert alert-error p-2 rounded-lg mb-1">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ message }}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <div class="input-with-icon">
+                    <i class="fas fa-user"></i>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        value="{{ user.username }}" 
+                        placeholder="Username"
+                        required
+                    >
+                </div>
+                {% if form.username.errors %}
+                <span class="error-message">{{ form.username.errors.0 }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <div class="input-with-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        value="{{ user.email }}" 
+                        placeholder="Email"
+                        required
+                    >
+                </div>
+                {% if form.email.errors %}
+                <span class="error-message">{{ form.email.errors.0 }}</span>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="neon-btn" id="saveBtn" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </form>
+        
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Change Password</h3>
+            <a href="{% url 'authuser:change_password' %}" class="neon-btn secondary-btn" style="width: 100%; text-align: center; display: block;">
+                <i class="fas fa-key"></i> Change Password
+            </a>
+        </div>
+        
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin-bottom: 1rem; color: #f85149;">Danger Zone</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                Once you delete your account, there is no going back. All your prediction history will be permanently deleted.
+            </p>
+            <button 
+                type="button"
+                onclick="confirmDelete()" 
+                class="neon-btn" 
+                style="width: 100%; background: linear-gradient(135deg, #f85149 0%, #dc2626 100%); text-align: center; display: block; border: none; cursor: pointer;"
+            >
+                <i class="fas fa-trash-alt"></i> Delete My Account
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete() {
+    const confirmed = confirm('⚠️ WARNING: This action cannot be undone!\n\nAre you absolutely sure you want to delete your account?\n\nAll your data including:\n• Prediction history\n• Account information\n• Settings\n\nWill be permanently deleted.');
+    
+    if (confirmed) {
+        const doubleConfirm = confirm('This is your last chance!\n\nType your username to confirm deletion.\n\nClick OK to proceed with account deletion.');
+        
+        if (doubleConfirm) {
+            window.location.href = "{% url 'authuser:delete_account' %}";
+        }
+    }
+}
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}"></script>
+{% endblock %}

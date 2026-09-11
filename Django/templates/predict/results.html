@@ -1,0 +1,646 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Prediction Results - CryptoSight{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        min-height: 100vh;
+    }
+    
+    .results-container {
+        max-width: 1300px;
+        margin: 110px auto 60px;
+        padding: 0 3.5rem 3.5rem;
+    }
+    
+    .results-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .results-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--neon-cyan);
+        text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        margin-bottom: 0.75rem;
+    }
+    
+    .results-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.75rem;
+        margin-bottom: 3rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .metric-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 1.75rem 1.5rem;
+        border: 1px solid var(--glass-border);
+        transition: transform 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .metric-label {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        margin-bottom: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .metric-value {
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.4rem;
+    }
+    
+    .metric-change {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .metric-change.positive {
+        color: var(--neon-green);
+    }
+    
+    .metric-change.negative {
+        color: #f85149;
+    }
+    
+    .chart-container {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 2rem;
+        border: 1px solid var(--glass-border);
+        margin-bottom: 2.5rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    body.light-mode .chart-container {
+        background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .chart-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+    }
+    
+    #predictionChart {
+        max-height: 360px;
+    }
+    
+    .sentiment-badge {
+        padding: 0.5rem 1.25rem;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: 700;
+        display: inline-block;
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .sentiment-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sentiment-bullish {
+        background: linear-gradient(135deg, rgba(46, 160, 67, 0.25) 0%, rgba(46, 160, 67, 0.15) 100%);
+        color: var(--neon-green);
+        border: 1.5px solid rgba(46, 160, 67, 0.4);
+    }
+    
+    .sentiment-bearish {
+        background: linear-gradient(135deg, rgba(248, 81, 73, 0.25) 0%, rgba(248, 81, 73, 0.15) 100%);
+        color: #f85149;
+        border: 1.5px solid rgba(248, 81, 73, 0.4);
+    }
+    
+    .sentiment-neutral {
+        background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(255, 255, 255, 0.05) 100%);
+        color: var(--text-secondary);
+        border: 1.5px solid var(--glass-border);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+        padding-bottom: 1rem;
+    }
+    
+    .btn {
+        padding: 0.85rem 1.75rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background: var(--neon-cyan);
+        color: #0f1419;
+        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(0, 212, 255, 0.6);
+    }
+    
+    .btn-secondary {
+        background: var(--glass-bg);
+        color: var(--text-primary);
+        border: 1px solid var(--glass-border);
+    }
+    
+    .btn-secondary:hover {
+        background: var(--glass-bg);
+        border-color: var(--neon-cyan);
+    }
+    
+    @media (max-width: 768px) {
+        .results-container {
+            margin-top: 80px;
+            padding: 0 1rem 1rem;
+        }
+        
+        .results-title {
+            font-size: 1.8rem;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .metric-card {
+            padding: 1.25rem;
+        }
+        
+        .chart-container {
+            padding: 1.25rem;
+        }
+        
+        #predictionChart {
+            max-height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="results-header">
+        <h1 class="results-title">Prediction Results</h1>
+        <p class="results-subtitle">
+            AI-powered cryptocurrency price prediction for <span id="crypto-name">Bitcoin</span> &rarr; <span id="timeframe-display">24 hours</span>.
+            <br><small style="opacity: 0.8;"><i>Note: Live prices are sourced from Binance and may differ slightly from other platforms.</i></small>
+        </p>
+    </div>
+    
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Current Price (INR)</div>
+            <div class="metric-value" id="current-price">Loading...</div>
+            <div class="metric-change positive">Live Data</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-label">Predicted Price (INR)</div>
+            <div class="metric-value" id="predicted-price">Loading...</div>
+            <div class="metric-change positive" id="price-change">Calculating...</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-label">Confidence Level</div>
+            <div class="metric-value" id="confidence-level">Loading...</div>
+            <div class="metric-change" id="confidence-label">Calculating...</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-label">Market Sentiment</div>
+            <div class="metric-value" id="market-sentiment">Loading...</div>
+            <div class="metric-change" id="sentiment-label">Analyzing...</div>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <h2 class="chart-title">Price Prediction Chart</h2>
+        <canvas id="predictionChart"></canvas>
+    </div>
+    
+    <div class="action-buttons">
+        <a href="{% url 'predict:selector' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            New Prediction
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-download"></i>
+            Export Results
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Function to poll task status until completion
+    function pollTaskStatus(taskId, maxAttempts = 60, interval = 1000) {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            
+            const checkStatus = () => {
+                attempts++;
+                console.log(`Polling task status (attempt ${attempts}/${maxAttempts})...`);
+                
+                fetch(`/predict/api/task-status/?task_id=${taskId}`)
+                    .then(response => response.json())
+                    .then(statusData => {
+                        console.log('Task status:', statusData.status);
+                        
+                        if (statusData.status === 'SUCCESS') {
+                            console.log('Task completed successfully!');
+                            resolve(statusData.result);
+                        } else if (statusData.status === 'FAILURE') {
+                            reject(new Error(statusData.error || 'Task failed'));
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error('Task timeout - took too long to complete'));
+                        } else {
+                            // Task still pending/running, check again
+                            setTimeout(checkStatus, interval);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking task status:', error);
+                        if (attempts >= maxAttempts) {
+                            reject(error);
+                        } else {
+                            setTimeout(checkStatus, interval);
+                        }
+                    });
+            };
+            
+            checkStatus();
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const crypto = urlParams.get('crypto') || 'BTC';
+        const timeframe = urlParams.get('timeframe') || 'hourly';
+        const period = parseInt(urlParams.get('period') || '24');
+        
+        const cryptoNames = {
+            'BTC': 'Bitcoin', 'ETH': 'Ethereum', 'DOGE': 'Dogecoin',
+            'SOL': 'Solana', 'ADA': 'Cardano', 'DOT': 'Polkadot'
+        };
+        
+        const cryptoNameEl = document.getElementById('crypto-name');
+        if (cryptoNameEl) cryptoNameEl.textContent = cryptoNames[crypto] || crypto;
+        
+        // Set timeframe display
+        const timeframeDisplayEl = document.getElementById('timeframe-display');
+        if (timeframeDisplayEl) {
+            let timeframeText = '';
+            if (timeframe === 'hourly') {
+                timeframeText = period === 1 ? '1 hour' : `${period} hours`;
+            } else if (timeframe === 'daily') {
+                timeframeText = period === 1 ? '1 day' : `${period} days`;
+            }
+            timeframeDisplayEl.textContent = timeframeText;
+        }
+        
+        console.log('Fetching prediction for:', crypto, timeframe, period);
+        
+        // Submit async prediction (Celery) and poll until complete
+        fetch(`/predict/api/predict-async/?crypto=${crypto}&timeframe=${timeframe}&period=${period}`)
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    return response.json().then(err => { 
+                        console.error('API Error:', err);
+                        throw new Error(err.error || 'Prediction failed'); 
+                    });
+                }
+                return response.json();
+            })
+            .then(responseData => {
+                console.log('Response received:', responseData);
+                
+                // Check if this is an async task response
+                if (responseData.status === 'PENDING' && responseData.task_id) {
+                    console.log('Task submitted, polling for results...');
+                    return pollTaskStatus(responseData.task_id);
+                }
+                
+                // Extract result data (handles both direct and Celery response formats)
+                const data = responseData.result || responseData;
+                console.log('Prediction data:', data);
+                return data;
+            })
+            .then(data => {
+                console.log('Final prediction data:', data);
+                document.getElementById('current-price').textContent = '₹' + data.current_price.toLocaleString('en-IN');
+                document.getElementById('predicted-price').textContent = '₹' + data.predicted_price.toLocaleString('en-IN');
+                document.getElementById('confidence-level').textContent = data.confidence_level + '%';
+                
+                // Update market sentiment with badge styling
+                const sentimentEl = document.getElementById('market-sentiment');
+                const sentiment = data.market_sentiment.toLowerCase();
+                let sentimentClass = 'sentiment-neutral';
+                
+                if (sentiment.includes('bullish')) {
+                    sentimentClass = 'sentiment-bullish';
+                } else if (sentiment.includes('bearish')) {
+                    sentimentClass = 'sentiment-bearish';
+                }
+                
+                sentimentEl.innerHTML = `<span class="sentiment-badge ${sentimentClass}">${data.market_sentiment}</span>`;
+                
+                // Update confidence label based on confidence level
+                const confidenceLabelEl = document.getElementById('confidence-label');
+                if (data.confidence_level >= 90) {
+                    confidenceLabelEl.textContent = 'Very High Accuracy';
+                } else if (data.confidence_level >= 80) {
+                    confidenceLabelEl.textContent = 'High Accuracy';
+                } else if (data.confidence_level >= 70) {
+                    confidenceLabelEl.textContent = 'Moderate Accuracy';
+                } else {
+                    confidenceLabelEl.textContent = 'Lower Accuracy';
+                }
+                
+                // Update sentiment label based on sentiment type
+                const sentimentLabelEl = document.getElementById('sentiment-label');
+                if (sentiment.includes('strongly bullish')) {
+                    sentimentLabelEl.textContent = 'Strong Buy Signal';
+                    sentimentLabelEl.className = 'metric-change positive';
+                } else if (sentiment.includes('bullish')) {
+                    sentimentLabelEl.textContent = 'Buy Signal';
+                    sentimentLabelEl.className = 'metric-change positive';
+                } else if (sentiment.includes('strongly bearish')) {
+                    sentimentLabelEl.textContent = 'Strong Sell Signal';
+                    sentimentLabelEl.className = 'metric-change negative';
+                } else if (sentiment.includes('bearish')) {
+                    sentimentLabelEl.textContent = 'Sell Signal';
+                    sentimentLabelEl.className = 'metric-change negative';
+                } else if (sentiment.includes('neutral')) {
+                    sentimentLabelEl.textContent = 'Hold Position';
+                    sentimentLabelEl.className = 'metric-change';
+                } else {
+                    sentimentLabelEl.textContent = 'Monitor Closely';
+                    sentimentLabelEl.className = 'metric-change';
+                }
+                
+                const priceChange = ((data.predicted_price - data.current_price) / data.current_price * 100).toFixed(2);
+                const priceChangeEl = document.getElementById('price-change');
+                priceChangeEl.textContent = (priceChange > 0 ? '+' : '') + priceChange + '%';
+                priceChangeEl.className = 'metric-change ' + (priceChange > 0 ? 'positive' : 'negative');
+                
+                const ctx = document.getElementById('predictionChart').getContext('2d');
+                const isLightMode = document.body.classList.contains('light-mode');
+                
+                // BEAUTIFUL THEME COLORS - Satisfying visuals
+                const textColor = isLightMode ? '#0c4a6e' : '#00d4ff';
+                const gridColor = isLightMode ? 'rgba(8, 145, 178, 0.15)' : 'rgba(0, 212, 255, 0.15)';
+                const tooltipBg = isLightMode ? 'rgba(255, 255, 255, 0.98)' : 'rgba(15, 23, 42, 0.98)';
+                const tooltipTextColor = isLightMode ? '#0c4a6e' : '#00d4ff';
+                const tooltipBorderColor = '#00d4ff';
+                
+                // Build a predicted series that starts exactly at the last historical point
+                const historyLength = data.historical_prices.length;
+                const predictedSeries = data.predicted_prices.slice();
+                if (historyLength > 0) {
+                    predictedSeries[historyLength - 1] = data.historical_prices[historyLength - 1];
+                }
+
+                window.predictionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.timestamps,
+                        datasets: [{
+                            label: 'Historical Price',
+                            data: data.historical_prices,
+                            borderColor: '#00d4ff',
+                            backgroundColor: 'rgba(0, 212, 255, 0.2)',
+                            borderWidth: 4,
+                            tension: 0.4,
+                            spanGaps: true,
+                            pointRadius: 5,
+                            pointHoverRadius: 10,
+                            pointBackgroundColor: '#00d4ff',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBackgroundColor: '#00e5ff',
+                            pointHoverBorderColor: '#00d4ff',
+                            pointHoverBorderWidth: 4,
+                            fill: true
+                        }, {
+                            label: 'Predicted Price',
+                            data: predictedSeries,
+                            borderColor: '#a855f7',
+                            backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                            borderWidth: 4,
+                            borderDash: [10, 5],
+                            tension: 0.4,
+                            spanGaps: true,
+                            pointRadius: (ctx) => ctx.dataIndex === historyLength - 1 ? 0 : 6,
+                            pointHoverRadius: (ctx) => ctx.dataIndex === historyLength - 1 ? 0 : 11,
+                            pointBackgroundColor: '#a855f7',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBackgroundColor: '#c084fc',
+                            pointHoverBorderColor: '#a855f7',
+                            pointHoverBorderWidth: 4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        interaction: { mode: 'nearest', intersect: true },
+                        plugins: {
+                            legend: { 
+                                display: true,
+                                labels: { 
+                                    color: textColor,
+                                    font: { 
+                                        size: 16, 
+                                        weight: '700',
+                                        family: 'Poppins'
+                                    },
+                                    padding: 15,
+                                    usePointStyle: false,
+                                    boxWidth: 40,
+                                    boxHeight: 3
+                                } 
+                            },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: tooltipBg,
+                                titleColor: tooltipTextColor,
+                                bodyColor: tooltipTextColor,
+                                borderColor: tooltipBorderColor,
+                                borderWidth: 3,
+                                padding: 18,
+                                titleFont: { size: 16, weight: 'bold', family: 'Poppins' },
+                                bodyFont: { size: 15, weight: '600', family: 'Poppins' },
+                                displayColors: true,
+                                boxWidth: 15,
+                                boxHeight: 15,
+                                usePointStyle: true,
+                                cornerRadius: 12,
+                                caretSize: 8,
+                                caretPadding: 12,
+                                // Hide duplicate entry at the join point so only one price shows
+                                filter: function(context) {
+                                    const isOverlapIndex = context.dataIndex === historyLength - 1;
+                                    if (!isOverlapIndex) return true;
+                                    // Show only Historical at the overlap index
+                                    return context.datasetIndex === 0;
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += '₹' + context.parsed.y.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                        }
+                                        return label;
+                                    },
+                                    title: function(context) {
+                                        return context[0].label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                display: true,
+                                ticks: { 
+                                    color: textColor,
+                                    font: { 
+                                        size: 14, 
+                                        weight: '700',
+                                        family: 'Poppins'
+                                    },
+                                    padding: 8,
+                                    autoSkip: true,
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }, 
+                                grid: { 
+                                    color: gridColor,
+                                    display: true,
+                                    drawBorder: true,
+                                    lineWidth: 1
+                                },
+                                border: {
+                                    display: true,
+                                    color: textColor,
+                                    width: 2
+                                }
+                            },
+                            y: { 
+                                display: true,
+                                ticks: { 
+                                    color: textColor,
+                                    font: { 
+                                        size: 14, 
+                                        weight: '700',
+                                        family: 'Poppins'
+                                    },
+                                    padding: 8,
+                                    callback: function(value) {
+                                        return '₹' + value.toFixed(0);
+                                    }
+                                }, 
+                                grid: { 
+                                    color: gridColor,
+                                    display: true,
+                                    drawBorder: true,
+                                    lineWidth: 1
+                                },
+                                border: {
+                                    display: true,
+                                    color: textColor,
+                                    width: 2
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Click-to-show tooltip with the exact price for each point
+                const canvasEl = document.getElementById('predictionChart');
+                canvasEl.addEventListener('click', function(evt) {
+                    const points = window.predictionChart.getElementsAtEventForMode(
+                        evt,
+                        'nearest',
+                        { intersect: true },
+                        true
+                    );
+                    if (points.length) {
+                        const firstPoint = points[0];
+                        window.predictionChart.tooltip.setActiveElements([
+                            { datasetIndex: firstPoint.datasetIndex, index: firstPoint.index }
+                        ], { x: firstPoint.element.x, y: firstPoint.element.y });
+                        window.predictionChart.update();
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Prediction Error:', error);
+                document.querySelector('.results-container').innerHTML = `
+                    <div style="text-align: center; padding: 4rem 2rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+                        <h2 style="color: #f85149; margin-bottom: 1rem;">Prediction Failed</h2>
+                        <p style="color: rgba(255,255,255,0.7); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                            ${error.message || 'Unable to generate prediction. The model may not be available for this cryptocurrency.'}
+                        </p>
+                        <a href="/predict/selector/" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600;">
+                            <i class="fas fa-arrow-left"></i>
+                            Try Another Cryptocurrency
+                        </a>
+                    </div>
+                `;
+            });
+    });
+</script>
+{% endblock %}

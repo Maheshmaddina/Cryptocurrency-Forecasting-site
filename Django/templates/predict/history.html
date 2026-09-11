@@ -1,0 +1,580 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Prediction History - CryptoSight{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        min-height: 100vh;
+    }
+    
+    .history-container {
+        max-width: 1400px;
+        margin: 80px auto 40px;
+        padding: 2rem;
+    }
+    
+    .history-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .history-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--neon-cyan);
+        text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        margin-bottom: 0.5rem;
+    }
+    
+    body.light-mode .history-title {
+        text-shadow: none;
+    }
+    
+    .history-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+    
+    /* Filter Bar Styles */
+    .filter-container {
+        margin: 0 auto 2.5rem;
+        max-width: 1200px;
+    }
+    
+    .filter-form {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .filter-group label {
+        display: block;
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .filter-select {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 1rem;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+    
+    .filter-select:hover {
+        border-color: var(--neon-cyan);
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-end; /* Align to the bottom to match form elements */
+    }
+    
+    .apply-filters-btn {
+        padding: 0.875rem 1.5rem;
+        background: var(--neon-cyan);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+    }
+    
+    .apply-filters-btn:hover {
+        background: var(--neon-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+    }
+    
+    .clear-filters-btn {
+        padding: 0.875rem 1.25rem;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+    
+    .clear-filters-btn:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    body.light-mode .filter-select {
+        background: white;
+        border-color: rgba(8, 145, 178, 0.3);
+    }
+    
+    .history-table {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 2rem;
+        border: 1px solid var(--glass-border);
+        overflow-x: auto;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    thead {
+        background: var(--glass-bg);
+    }
+    
+    th {
+        padding: 0.875rem 0.5rem;
+        text-align: left;
+        color: var(--neon-cyan);
+        font-weight: 600;
+        border-bottom: 2px solid var(--glass-border);
+        white-space: nowrap;
+        font-size: 0.95rem;
+    }
+    
+    td {
+        padding: 0.875rem 0.5rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--glass-border);
+        font-size: 0.95rem;
+    }
+    
+    /* Column width adjustments */
+    th:nth-child(1), td:nth-child(1) { width: 11%; } /* Date & Time */
+    th:nth-child(2), td:nth-child(2) { width: 6%; }  /* Crypto */
+    th:nth-child(3), td:nth-child(3) { width: 7%; }  /* Timeframe */
+    th:nth-child(4), td:nth-child(4) { width: 10%; } /* Current Price */
+    th:nth-child(5), td:nth-child(5) { width: 10%; } /* Predicted Price */
+    th:nth-child(6), td:nth-child(6) { width: 10%; } /* Actual Price */
+    th:nth-child(7), td:nth-child(7) { width: 7%; }  /* Change */
+    th:nth-child(8), td:nth-child(8) { width: 9%; }  /* Accuracy */
+    th:nth-child(9), td:nth-child(9) { width: 14%; } /* Sentiment */
+    th:nth-child(10), td:nth-child(10) { width: 7%; } /* Confidence */
+    
+    tr:hover {
+        background: var(--glass-bg);
+    }
+    
+    body.light-mode tr:hover {
+        background: rgba(8, 145, 178, 0.05);
+    }
+    
+    .crypto-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: var(--neon-cyan);
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: white;
+    }
+    
+    .sentiment-badge {
+        padding: 0.35rem 0.9rem;
+        border-radius: 16px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        white-space: nowrap;
+        display: inline-block;
+        letter-spacing: 0.2px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sentiment-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .sentiment-bullish {
+        background: linear-gradient(135deg, rgba(46, 160, 67, 0.25) 0%, rgba(46, 160, 67, 0.15) 100%);
+        color: var(--neon-green);
+        border: 1.5px solid rgba(46, 160, 67, 0.4);
+    }
+    
+    .sentiment-bearish {
+        background: linear-gradient(135deg, rgba(248, 81, 73, 0.25) 0%, rgba(248, 81, 73, 0.15) 100%);
+        color: #f85149;
+        border: 1.5px solid rgba(248, 81, 73, 0.4);
+    }
+    
+    .sentiment-neutral {
+        background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(255, 255, 255, 0.05) 100%);
+        color: var(--text-secondary);
+        border: 1.5px solid var(--glass-border);
+    }
+    
+    .price-change {
+        font-weight: 600;
+    }
+    
+    .price-change.positive {
+        color: var(--neon-green);
+    }
+    
+    .price-change.negative {
+        color: #f85149;
+    }
+    
+    /* Actual Price Styles */
+    .actual-price {
+        font-weight: 600;
+        color: var(--neon-cyan);
+    }
+    
+    .pending-price {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+    }
+    
+    .pending-price i {
+        font-size: 0.85rem;
+    }
+    
+    /* Accuracy Badge Styles */
+    .accuracy-badge {
+        padding: 0.35rem 0.9rem;
+        border-radius: 16px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    
+    .accuracy-high {
+        background: linear-gradient(135deg, rgba(46, 160, 67, 0.25) 0%, rgba(46, 160, 67, 0.15) 100%);
+        color: var(--neon-green);
+        border: 1.5px solid rgba(46, 160, 67, 0.4);
+    }
+    
+    .accuracy-medium {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.25) 0%, rgba(255, 193, 7, 0.15) 100%);
+        color: #ffc107;
+        border: 1.5px solid rgba(255, 193, 7, 0.4);
+    }
+    
+    .accuracy-low {
+        background: linear-gradient(135deg, rgba(248, 81, 73, 0.25) 0%, rgba(248, 81, 73, 0.15) 100%);
+        color: #f85149;
+        border: 1.5px solid rgba(248, 81, 73, 0.4);
+    }
+    
+    .accuracy-na {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-secondary);
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+        color: var(--text-primary);
+    }
+    
+    .btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: var(--neon-cyan);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: transform 0.3s ease;
+        margin-top: 1rem;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Pagination Styles */
+    .pagination-container {
+        margin-top: 2.5rem;
+        padding: 1.5rem 0;
+    }
+    
+    .history-stats {
+        text-align: center;
+        margin-bottom: 1.25rem;
+    }
+    
+    .history-stats p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin: 0;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .page-btn {
+        padding: 0.625rem 1.25rem;
+        background: var(--neon-cyan);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .page-btn:hover {
+        background: var(--neon-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+    }
+    
+    .page-info {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.625rem 1.25rem;
+        background: var(--glass-bg);
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(10px);
+    }
+    
+    body.light-mode .page-btn {
+        background: var(--neon-cyan);
+        color: white;
+    }
+    
+    body.light-mode .page-btn:hover {
+        background: var(--neon-blue);
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .history-container {
+            padding: 1rem;
+            margin-top: 100px;
+        }
+        
+        .history-title {
+            font-size: 2rem;
+        }
+        
+        .history-table {
+            padding: 1rem;
+            overflow-x: scroll;
+        }
+        
+        table {
+            min-width: 800px;
+        }
+        
+        th, td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="history-header">
+        <h1 class="history-title">Prediction History</h1>
+        <p class="history-subtitle">Your past cryptocurrency predictions</p>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-container">
+        <form method="get" action="{% url 'predict:history' %}" class="filter-form" id="filterForm">
+            <div class="filter-group">
+                <label for="crypto">Cryptocurrency</label>
+                <select name="crypto" id="crypto" class="filter-select">
+                    <option value="">All Cryptos</option>
+                    {% for crypto in available_cryptos %}
+                    <option value="{{ crypto }}" {% if crypto_filter == crypto %}selected{% endif %}>{{ crypto }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="timeframe">Timeframe</label>
+                <select name="timeframe" id="timeframe" class="filter-select">
+                    <option value="">All Timeframes</option>
+                    {% for timeframe in available_timeframes %}
+                    <option value="{{ timeframe }}" {% if timeframe_filter == timeframe %}selected{% endif %}>{{ timeframe }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-actions">
+                {% if crypto_filter or timeframe_filter %}
+                    <a href="{% url 'predict:history' %}" class="clear-filters-btn">
+                        <i class="fas fa-times-circle"></i> Clear Filters
+                    </a>
+                {% else %}
+                    <button type="submit" class="apply-filters-btn">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    
+    {% if predictions %}
+    <div class="history-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Crypto</th>
+                    <th>Timeframe</th>
+                    <th>Current Price</th>
+                    <th>Predicted Price</th>
+                    <th>Actual Price</th>
+                    <th>Change</th>
+                    <th>Accuracy</th>
+                    <th>Sentiment</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pred in predictions %}
+                <tr>
+                    <td>{{ pred.created_at|date:"M d, Y H:i" }}</td>
+                    <td><span class="crypto-badge">{{ pred.crypto }}</span></td>
+                    <td>{{ pred.period }} {% if pred.timeframe == 'hourly' %}hour{% if pred.period > 1 %}s{% endif %}{% elif pred.timeframe == 'daily' %}day{% if pred.period > 1 %}s{% endif %}{% else %}{{ pred.timeframe }}{% endif %}</td>
+                    <td>₹{{ pred.current_price|floatformat:2 }}</td>
+                    <td>₹{{ pred.predicted_price|floatformat:2 }}</td>
+                    <td>
+                        {% if pred.actual_price %}
+                            <span class="actual-price">₹{{ pred.actual_price|floatformat:2 }}</span>
+                        {% else %}
+                            <span class="pending-price" title="Prediction target time: {{ pred.prediction_target_time|date:'M d, Y H:i' }}">
+                                <i class="fas fa-hourglass-half"></i> Pending
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="price-change {% if pred.price_change_percentage > 0 %}positive{% else %}negative{% endif %}">
+                            {% if pred.price_change_percentage > 0 %}+{% endif %}{{ pred.price_change_percentage|floatformat:2 }}%
+                        </span>
+                    </td>
+                    <td>
+                        {% if pred.prediction_accuracy %}
+                            <span class="accuracy-badge {% if pred.prediction_accuracy >= 90 %}accuracy-high{% elif pred.prediction_accuracy >= 75 %}accuracy-medium{% else %}accuracy-low{% endif %}">
+                                {{ pred.prediction_accuracy }}%
+                            </span>
+                        {% else %}
+                            <span class="accuracy-na">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="sentiment-badge {% if 'Bullish' in pred.market_sentiment %}sentiment-bullish{% elif 'Bearish' in pred.market_sentiment %}sentiment-bearish{% else %}sentiment-neutral{% endif %}">
+                            {{ pred.market_sentiment }}
+                        </span>
+                    </td>
+                    <td>{{ pred.confidence_level }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination Controls -->
+    {% if predictions.has_other_pages %}
+    <div class="pagination-container">
+        <div class="history-stats">
+            <p>Showing {{ predictions.start_index }} - {{ predictions.end_index }} of {{ total_count }} predictions</p>
+        </div>
+        
+        <div class="pagination">
+            {% if predictions.has_previous %}
+                <a href="?page={{ predictions.previous_page_number }}{% if crypto_filter %}&crypto={{ crypto_filter }}{% endif %}{% if timeframe_filter %}&timeframe={{ timeframe_filter }}{% endif %}" class="page-btn">Previous</a>
+            {% endif %}
+            
+            <span class="page-info">
+                Page {{ predictions.number }} of {{ predictions.paginator.num_pages }}
+            </span>
+            
+            {% if predictions.has_next %}
+                <a href="?page={{ predictions.next_page_number }}{% if crypto_filter %}&crypto={{ crypto_filter }}{% endif %}{% if timeframe_filter %}&timeframe={{ timeframe_filter }}{% endif %}" class="page-btn">Next</a>
+                <a href="?page={{ predictions.paginator.num_pages }}{% if crypto_filter %}&crypto={{ crypto_filter }}{% endif %}{% if timeframe_filter %}&timeframe={{ timeframe_filter }}{% endif %}" class="page-btn">Last »</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-chart-line"></i>
+        <h3>No Predictions Yet</h3>
+        <p>Start making predictions to see your history here</p>
+        <a href="{% url 'predict:selector' %}" class="btn">
+            <i class="fas fa-plus"></i> Make Your First Prediction
+        </a>
+    </div>
+    {% endif %}
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'predict:selector' %}" class="btn">
+            <i class="fas fa-arrow-left"></i> New Prediction
+        </a>
+    </div>
+</div>
+{% endblock %}

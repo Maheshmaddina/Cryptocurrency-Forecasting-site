@@ -1,0 +1,34 @@
+{
+  "BTC": {
+    "instrument": "BTC-INR",
+    "start_date": "2010-07-17"
+  },
+  "ETH": {
+    "instrument": "ETH-INR",
+    "start_date": "2015-07-30"
+  },
+  "XRP": {
+    "instrument": "XRP-INR",
+    "start_date": "2013-02-18"
+  },
+  "BNB": {
+    "instrument": "BNB-INR",
+    "start_date": "2017-07-24"
+  },
+  "SOL": {
+    "instrument": "SOL-INR",
+    "start_date": "2020-04-11"
+  },
+  "DOGE": {
+    "instrument": "DOGE-INR",
+    "start_date": "2013-12-09"
+  },
+  "ADA": {
+    "instrument": "ADA-INR",
+    "start_date": "2017-09-30"
+  },
+  "AVAX": {
+    "instrument": "AVAX-INR",
+    "start_date": "2020-09-11"
+  }
+}

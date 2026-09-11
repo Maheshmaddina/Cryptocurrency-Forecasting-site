@@ -1,0 +1,37 @@
+{% load static %}
+<!-- Chatbot Button -->
+<button id="chatbot-trigger" class="chatbot-trigger" title="Chat with CryptoSight AI">
+    <i class="fas fa-comment-dots"></i>
+</button>
+
+<!-- Chatbot Modal -->
+<div id="chatbot-modal" class="chatbot-modal">
+    <div class="chatbot-modal-content">
+        <div class="chatbot-header">
+            <div class="chatbot-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="chatbot-title">
+                <h4>CryptoSight AI Assistant</h4>
+                <span class="chatbot-status">Online</span>
+            </div>
+            <button class="chatbot-close">&times;</button>
+        </div>
+        <div class="chatbot-messages-wrapper">
+            <div id="chatbot-messages" class="chatbot-messages">
+                <!-- Messages will be added here dynamically -->
+            </div>
+        </div>
+        <div class="chatbot-input-container">
+            <div id="chatbot-options" class="chatbot-options">
+                <!-- Options will be added here dynamically -->
+            </div>
+            <div class="chatbot-input-wrapper">
+                <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Type your message..." autocomplete="off">
+                <button id="chatbot-send" class="chatbot-send">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

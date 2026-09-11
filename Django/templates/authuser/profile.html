@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=15">
+<style>
+.price-change.positive {
+    color: #2ea043;
+}
+.price-change.negative {
+    color: #f85149;
+}
+.sentiment-bullish {
+    background: rgba(46, 160, 67, 0.2);
+    color: #2ea043;
+}
+.sentiment-bearish {
+    background: rgba(248, 81, 73, 0.2);
+    color: #f85149;
+}
+.sentiment-neutral {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="glass-card profile-card">
+        <h2 class="profile-title">Your Profile</h2>
+        
+        <div class="profile-info">
+            <div class="profile-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-details">
+                <h3>{{ user.username }}</h3>
+                <p>{{ user.email }}</p>
+                <p>Member since: {{ user.date_joined|date:"F d, Y" }}</p>
+            </div>
+        </div>
+        
+        <div class="profile-stats">
+            <div class="stat-card">
+                <i class="fas fa-chart-line"></i>
+                <h4>Predictions Made</h4>
+                <p class="stat-number">{{ total_predictions|default:"0" }}</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-history"></i>
+                <h4>Recent Activity</h4>
+                <p class="stat-number">Last {{ recent_predictions|length }}</p>
+            </div>
+        </div>
+        
+        {% if recent_predictions %}
+        <div class="recent-predictions">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Recent Predictions</h3>
+                <a href="{% url 'predict:history' %}" class="neon-btn secondary-btn" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="predictions-list">
+                {% for pred in recent_predictions %}
+                <div class="prediction-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 0.5rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div class="prediction-coin" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600;">
+                            {{ pred.crypto }}
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">{{ pred.created_at|date:"M d, Y H:i" }}</div>
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.5);">{{ pred.period }} {{ pred.timeframe }}</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">₹{{ pred.current_price|floatformat:0 }} → ₹{{ pred.predicted_price|floatformat:0 }}</div>
+                        <div class="price-change {% if pred.price_change_percentage > 0 %}positive{% else %}negative{% endif %}" style="font-size: 0.85rem;">
+                            {% if pred.price_change_percentage > 0 %}+{% endif %}{{ pred.price_change_percentage|floatformat:2 }}%
+                        </div>
+                    </div>
+                    <div class="prediction-result sentiment-{{ pred.market_sentiment|lower }}" style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                        {{ pred.market_sentiment }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="no-predictions" style="text-align: center; padding: 3rem; color: rgba(255,255,255,0.6);">
+            <i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+            <p>You haven't made any predictions yet.</p>
+            <a href="{% url 'predict:selector' %}" class="neon-btn secondary-btn">Start Predicting</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}"></script>
+{% endblock %}
